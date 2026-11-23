@@ -1,0 +1,12 @@
+
+openai
+anthropic
+python-dotenv
+fastapi
+uvicorn[standard]
+tiktoken
+tenacity
+httpx
+pydantic
+pytest
+pytest-cov
