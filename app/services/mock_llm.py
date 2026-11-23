@@ -58,9 +58,15 @@ def ask_claude(prompt: str, system: str):
 
 
 def stream_openai(prompt: str):
-    """Generate a mock streaming response."""
+    """Generate a mock streaming response with controlled failure."""
+
+    if prompt == "TEST_ERROR":
+        yield "Starting test... "
+        raise RuntimeError("Simulated streaming failure")
 
     answer = ask_openai(prompt)["answer"]
 
     for word in answer.split():
         yield word + " "
+
+        
