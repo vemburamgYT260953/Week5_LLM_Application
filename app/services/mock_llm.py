@@ -57,16 +57,29 @@ def ask_claude(prompt: str, system: str):
 
 
 
-def stream_openai(prompt: str):
-    """Generate a mock streaming response with controlled failure."""
 
-    if prompt == "TEST_ERROR":
+
+def stream_openai(prompt: str):
+    """Generate mock streaming responses with basic conversation memory."""
+
+    if "TEST_ERROR" in prompt:
         yield "Starting test... "
         raise RuntimeError("Simulated streaming failure")
 
-    answer = ask_openai(prompt)["answer"]
+    lower_prompt = prompt.lower()
+
+    if "what is my name" in lower_prompt:
+        if "my name is vembu" in lower_prompt:
+            answer = "Your name is Vembu."
+        else:
+            answer = "I don't know your name yet."
+
+    elif "my name is vembu" in lower_prompt:
+        answer = "I will remember that your name is Vembu."
+
+    else:
+        answer = ask_openai(prompt)["answer"]
 
     for word in answer.split():
         yield word + " "
 
-        

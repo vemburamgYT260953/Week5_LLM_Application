@@ -8,6 +8,12 @@ from fastapi.responses import StreamingResponse
 from app.services.stream_service import generate_stream
 from app.token_counter import count_tokens
 
+from app.services.memory_service import (
+    create_conversation_id,
+    load_conversation,
+    save_conversation
+)
+
 app = FastAPI()
 
 
@@ -15,6 +21,12 @@ app = FastAPI()
 async def chat_stream(request: dict):
 
     prompt = request.get("prompt")
+    conversation_id = request.get("conversation_id")
+
+    if not conversation_id:
+        conversation_id = create_conversation_id()
+
+    messages = load_conversation(conversation_id)
 
     # Validate prompt
     if not isinstance(prompt, str) or not prompt.strip():
@@ -32,7 +44,7 @@ async def chat_stream(request: dict):
         full_response = ""
 
         try:
-            for chunk in generate_stream(prompt):
+            for chunk in generate_stream(prompt, messages):
 
                 if not isinstance(chunk, str):
                     chunk = str(chunk)
@@ -79,9 +91,26 @@ async def chat_stream(request: dict):
 
         yield f"data: {json.dumps({'usage': usage})}\n\n"
 
+        # Save conversation history
+        messages.append({
+            "role": "user",
+            "content": prompt
+        })
+
+        messages.append({
+            "role": "assistant",
+            "content": full_response
+        })
+
+        save_conversation(conversation_id, messages)
+
         yield "data: [DONE]\n\n"
+    def event_generator_with_id():
+        yield f"data: {json.dumps({'conversation_id': conversation_id})}\n\n"
+        yield from event_generator()
+
 
     return StreamingResponse(
-        event_generator(),
+        event_generator_with_id(),
         media_type="text/event-stream"
     )
