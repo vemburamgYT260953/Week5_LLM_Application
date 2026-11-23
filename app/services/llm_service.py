@@ -1,8 +1,11 @@
 
 from openai import OpenAI
 from anthropic import Anthropic
+from openai import OpenAI,AsyncOpenAI
+from anthropic import Anthropic,AsyncAnthropic
 
 from app.config import settings
+from app.services.retry_service import retry_llm_call
 
 
 # Initialize clients
@@ -13,8 +16,17 @@ openai_client = OpenAI(
 claude_client = Anthropic(
     api_key=settings.ANTHROPIC_API_KEY
 )
+# Initialize asynchronous clients
+async_openai_client = AsyncOpenAI(
+    api_key=settings.OPENAI_API_KEY
+)
+
+async_claude_client = AsyncAnthropic(
+    api_key=settings.ANTHROPIC_API_KEY
+)
 
 
+@retry_llm_call
 def ask_openai(prompt: str):
     """Send a prompt to OpenAI and return answer and usage."""
 
@@ -37,10 +49,63 @@ def ask_openai(prompt: str):
     }
 
 
+@retry_llm_call
 def ask_claude(prompt: str, system: str):
     """Send a prompt to Claude and return answer and usage."""
 
     response = claude_client.messages.create(
+        model=settings.ANTHROPIC_MODEL,
+        max_tokens=500,
+        system=system,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    answer = "".join(
+        block.text
+        for block in response.content
+        if block.type == "text"
+    )
+
+    return {
+        "provider": "Anthropic",
+        "model": response.model,
+        "answer": answer,
+        "input_tokens": response.usage.input_tokens,
+        "output_tokens": response.usage.output_tokens,
+        "total_tokens": (
+            response.usage.input_tokens
+            + response.usage.output_tokens
+        )
+    }
+
+@retry_llm_call
+async def async_ask_openai(prompt: str):
+    """Send an asynchronous prompt to OpenAI."""
+
+    response = await async_openai_client.chat.completions.create(
+        model=settings.OPENAI_MODEL,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    )
+
+    answer = response.choices[0].message.content
+
+    return {
+        "provider": "OpenAI",
+        "model": response.model,
+        "answer": answer,
+        "input_tokens": response.usage.prompt_tokens,
+        "output_tokens": response.usage.completion_tokens,
+        "total_tokens": response.usage.total_tokens
+    }
+@retry_llm_call
+async def async_ask_claude(prompt: str, system: str):
+    """Send an asynchronous prompt to Claude."""
+
+    response = await async_claude_client.messages.create(
         model=settings.ANTHROPIC_MODEL,
         max_tokens=500,
         system=system,
