@@ -5,30 +5,31 @@ from app.services.mock_llm import (
     stream_openai
 )
 
-if __name__ == "__main__":
 
-    print("========== OPENAI MOCK ==========")
+def test_openai_mock():
+    result = ask_openai("Explain what an LLM is.")
 
-    result = ask_openai(
-        "Explain what an LLM is."
-    )
+    assert isinstance(result, dict)
+    assert "answer" in result
+    assert len(result["answer"]) > 0
 
-    for key, value in result.items():
-        print(f"{key}: {value}")
 
-    print("\n========== CLAUDE MOCK ==========")
-
-    claude_result = ask_claude(
+def test_claude_mock():
+    result = ask_claude(
         "What is Python?",
         "You are a helpful AI assistant."
     )
 
-    for key, value in claude_result.items():
-        print(f"{key}: {value}")
+    assert isinstance(result, dict)
+    assert "answer" in result
+    assert len(result["answer"]) > 0
 
-    print("\n========== STREAMING MOCK ==========")
 
-    for chunk in stream_openai("Explain LLM"):
-        print(chunk, end="", flush=True)
+def test_openai_stream():
+    chunks = list(stream_openai("Explain LLM"))
 
-    print("\n\nMock testing completed!")
+    assert len(chunks) > 0
+    assert all(isinstance(chunk, str) for chunk in chunks)
+
+    response = "".join(chunks)
+    assert len(response) > 0

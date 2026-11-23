@@ -1,17 +1,22 @@
-
 import tiktoken
 
 
-def count_tokens(text: str) -> int:
-    encoding = tiktoken.get_encoding("cl100k_base")
-    tokens = encoding.encode(text)
-    return len(tokens)
+def count_tokens(text: str, model: str = "gpt-4o-mini") -> int:
+    """Count tokens using the model's tokenizer."""
+
+    encoding = tiktoken.encoding_for_model(model)
+
+    return len(encoding.encode(text))
 
 
-if __name__ == "__main__":
-    prompt = "Explain LLM in simple words"
+def get_token_usage(prompt: str, response: str) -> dict:
+    """Calculate prompt, response and total token usage."""
 
-    total_tokens = count_tokens(prompt)
+    prompt_tokens = count_tokens(prompt)
+    response_tokens = count_tokens(response)
 
-    print("Prompt:", prompt)
-    print("Token Count:", total_tokens)
+    return {
+        "prompt_tokens": prompt_tokens,
+        "response_tokens": response_tokens,
+        "total_tokens": prompt_tokens + response_tokens
+    }

@@ -54,6 +54,7 @@ async def chat_stream(request: dict):
             })
 
             yield f"data: {error_data}\n\n"
+            yield "data: [DONE]\n\n"
             return
 
         end_time = time.perf_counter()
