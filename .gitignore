@@ -18,3 +18,18 @@ htmlcov/
 .vscode/
 
 "@ | Set-Content .gitignore
+
+@"
+
+# Pytest cache
+.pytest_cache/
+
+# Generated conversation data
+data/conversations/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+"@ | Add-Content .gitignore
